@@ -1,6 +1,6 @@
 # Discord auth boilerplate
 
-ตัวอย่างนี้ให้คนเข้าสู่ระบบด้วย Discord แล้วได้ยศ Student บนเซิร์ฟเวอร์เดียว. เว็บรันบน Cloudflare Workers. บอทในโฟลเดอร์ bot/ ส่งลิงก์เว็บและให้เช็กว่ายศมาหรือยัง. เว็บเป็นคนเพิ่มยศหลังล็อกอิน. บอทรันบน VPS ของเจ้าของเซิร์ฟเวอร์ด้วย systemd.
+ตัวอย่างเล็กๆ สำหรับเว็บการเรียน ให้นักเรียนล็อกอินด้วย Discord แล้วได้ยศ Student ในเซิร์ฟเวอร์อัตโนมัติ เว็บเขียนด้วย Astro และรันบน Cloudflare Workers ส่วนบอทในโฟลเดอร์ `bot/` มีแค่คำสั่งส่งลิงก์เว็บกับคำสั่งเช็กยศ รันบน VPS ด้วย systemd เว็บขอสิทธิ์แค่ `identify` เลยไม่มีการดึงใครเข้าเซิร์ฟเวอร์ ถ้ายังไม่ได้เข้า หน้าเว็บจะให้กดเข้าเอง
 
 This example signs a student in with Discord and adds a role on one server. It runs on Cloudflare Workers. A small bot in `bot/` points people to the site and lets them check the role.
 
@@ -57,13 +57,13 @@ Add the production redirect URI in the Developer Portal: your `SITE_URL` plus `/
 
 ## Bot
 
-`/verify` and `/role-check` are described in `bot/README.md`.
-Setup, tests, and the systemd unit are in `bot/README.md`.
+The bot has two commands, `/verify` and `/role-check`. Setup, tests, and a systemd unit are in `bot/README.md`.
 
 ## Tests
 
 ```sh
 bun run test
+cd bot && npm test
 ```
 
 ## Security

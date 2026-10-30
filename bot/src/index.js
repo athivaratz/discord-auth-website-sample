@@ -46,7 +46,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		}
 		if (interaction.commandName === "role-check") {
 			const hasRole = memberHasRole(interaction.member, config.roleId);
-			await interaction.reply(roleCheckReply(hasRole, config.siteUrl));
+			await interaction.reply(roleCheckReply(hasRole));
 		}
 	} catch (error) {
 		console.error(`${interaction.commandName}: ${error.message}`);

@@ -35,9 +35,8 @@ describe("commands", () => {
 	});
 
 	it("tells the caller whether they have the role", () => {
-		const url = "https://student-hub.example";
-		const yes = roleCheckReply(true, url);
-		const no = roleCheckReply(false, url);
+		const yes = roleCheckReply(true);
+		const no = roleCheckReply(false);
 		assert.equal(yes.content, "You have the Student role.");
 		assert.equal(no.content, "You do not have the Student role yet. Use /verify to get it.");
 		assert.equal(yes.flags, MessageFlags.Ephemeral);

@@ -43,7 +43,7 @@ export function verifyReply(siteUrl) {
 	};
 }
 
-export function roleCheckReply(hasRole, siteUrl) {
+export function roleCheckReply(hasRole) {
 	const content = hasRole
 		? "You have the Student role."
 		: "You do not have the Student role yet. Use /verify to get it.";
