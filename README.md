@@ -1,6 +1,6 @@
 # Student Hub
 
-ตัวอย่างการล็อกอินด้วย Discord สำหรับเว็บการเรียน นักเรียนล็อกอินแล้วจะได้ บทบาท (role) Student ในเซิร์ฟเวอร์ให้เองอัตโนมัติ ส่วนบอทในโฟลเดอร์ `bot/` ช่วยส่งลิงก์ให้นักเรียนและเช็ก role ได้ ก่อนเริ่มต้องเตรียมสิ่งเหล่านี้
+ตัวอย่างการล็อกอินด้วย Discord สำหรับเว็บการเรียน นักเรียนที่ล็อกอินแล้วจะได้บทบาท (role) Student ในเซิร์ฟเวอร์โดยอัตโนมัติ ส่วนบอทในโฟลเดอร์ `bot/` ช่วยส่งลิงก์ให้นักเรียนและเช็ก role ได้ ก่อนเริ่มต้องเตรียมสิ่งเหล่านี้
 
 - Discord application สำหรับสร้างบอทและ OAuth2 ทำได้ที่ Developer Portal
 - บัญชี Cloudflare สำหรับ deploy เว็บ
@@ -25,7 +25,7 @@ The site asks Discord only for the `identify` scope. It cannot put a user into t
 
 - Node 22.23.4 or later. The root `package.json` sets this in `engines`.
 - Bun. The scripts in this repo use `bun` and `bunx`, and the repo includes `bun.lock`.
-- A Discord account and a server where you have the Manage Server permission.
+- A Discord account and a server where you can manage roles and add bots.
 - A Cloudflare account, for `wrangler`.
 - For the bot: Node 22 or later (see `bot/package.json`) on a machine that stays on, such as a VPS.
 
