@@ -1,43 +1,68 @@
-# Discord auth boilerplate
+# Student Hub
 
-ตัวอย่างเล็กๆ สำหรับเว็บการเรียน ให้นักเรียนล็อกอินด้วย Discord แล้วได้ยศ Student ในเซิร์ฟเวอร์อัตโนมัติ เว็บเขียนด้วย Astro และรันบน Cloudflare Workers ส่วนบอทในโฟลเดอร์ `bot/` มีแค่คำสั่งส่งลิงก์เว็บกับคำสั่งเช็กยศ รันบน VPS ด้วย systemd เว็บขอสิทธิ์แค่ `identify` เลยไม่มีการดึงใครเข้าเซิร์ฟเวอร์ ถ้ายังไม่ได้เข้า หน้าเว็บจะให้กดเข้าเอง
+ตัวอย่างการล็อกอินด้วย Discord สำหรับเว็บการเรียน นักเรียนล็อกอินแล้วจะได้ บทบาท (role) Student ในเซิร์ฟเวอร์ให้เองอัตโนมัติ ส่วนบอทในโฟลเดอร์ `bot/` ช่วยส่งลิงก์ให้นักเรียนและเช็ก role ได้ ก่อนเริ่มต้องเตรียมสิ่งเหล่านี้
 
-This example signs a student in with Discord and adds a role on one server. It runs on Cloudflare Workers. A small bot in `bot/` points people to the site and lets them check the role.
+- Discord application สำหรับสร้างบอทและ OAuth2 ทำได้ที่ Developer Portal
+- บัญชี Cloudflare สำหรับ deploy เว็บ
+- VPS หรือเครื่องที่รัน Node ได้ สำหรับรันบอท
 
-## How it works
+ขั้นตอนแบบละเอียดอยู่ในส่วนภาษาอังกฤษด้านล่าง
 
-1. Login with Discord sends the student to Discord with a random `state` value and the `identify` scope.
-2. Discord redirects to `/api/auth/callback` with a code. The site checks that `state` matches the cookie, exchanges the code for an access token, and reads the user id and username.
-3. The access token is thrown away. The browser keeps a signed cookie for 7 days.
-4. On each visit, the site checks the server member and adds the role when the member does not have it yet. The bot token is used for that call, and the bot only gets the Manage Roles permission.
+## English
 
-## Local setup
+This example signs a student in with Discord and gives them a role (`Student`) on one Discord server. The site is built with Astro and runs on Cloudflare Workers. The bot in `bot/` sends students a link to the site and can check whether they already have the role. It runs on a Linux machine under systemd.
+
+## How the login works
+
+1. The login button sends the browser to Discord with a random `state` value and the `identify` scope.
+2. Discord redirects back to `/api/auth/callback` with a `code`. The site checks that `state` matches the `oauth_state` cookie, then exchanges the code for an access token and reads the user's id and display name.
+3. The access token is not stored. The site keeps only the user id and name, in a signed cookie named `session` that lasts 7 days.
+4. On each visit to the home page, the site asks Discord whether the user is in the server. If the user is in the server and does not have the role yet, the site adds the role with the bot token.
+
+The site asks Discord only for the `identify` scope. It cannot put a user into the server. The role is added only to users who are already members.
+
+## Before you start
+
+- Node 22.23.4 or later. The root `package.json` sets this in `engines`.
+- Bun. The scripts in this repo use `bun` and `bunx`, and the repo includes `bun.lock`.
+- A Discord account and a server where you have the Manage Server permission.
+- A Cloudflare account, for `wrangler`.
+- For the bot: Node 22 or later (see `bot/package.json`) on a machine that stays on, such as a VPS.
+
+## Discord setup
+
+1. Open the [Discord Developer Portal](https://discord.com/developers/applications) and press **New Application**.
+2. On the **General Information** page, copy the **Application ID**. It becomes `DISCORD_CLIENT_ID`.
+3. On the **OAuth2** page, press **Reset Secret** if needed and copy the **Client Secret**. It becomes `DISCORD_CLIENT_SECRET`.
+4. On the **OAuth2** page, under **Redirects**, add these two URLs:
+   - `http://localhost:4321/api/auth/callback` for local development
+   - your production `SITE_URL` followed by `/api/auth/callback`, for example `https://student-hub.example.workers.dev/api/auth/callback`
+5. On the **Bot** page, press **Reset Token** and copy the token. It becomes `DISCORD_BOT_TOKEN`. The bot does not need any privileged intents.
+6. On the **OAuth2** page, open **URL Generator**. Select the scopes `bot` and `applications.commands`. Under bot permissions, select only **Manage Roles**. Open the generated URL and add the bot to your server.
+7. In Discord, open **Server Settings**, then **Roles**. Drag the bot's role above the `Student` role. The bot can only give roles that sit below its own role, so keep it below any admin or moderator roles too.
+8. Turn on **Developer Mode** in **User Settings**, then **Advanced**. Right click the server icon and copy the server ID. It becomes `DISCORD_GUILD_ID`. Right click the `Student` role in **Server Settings** and copy its ID. It becomes `DISCORD_ROLE_ID`.
+9. Create an invite link for the server that does not expire. It becomes `DISCORD_INVITE_URL`.
+
+## Run it locally
 
 ```sh
 bun install
 cp .dev.vars.example .dev.vars
 ```
 
-Fill in `.dev.vars`. Use a long random string for `SESSION_SECRET`, for example the output of `openssl rand -hex 32`.
+Open `.dev.vars` and fill in the values from the Discord setup. Set `SESSION_SECRET` to a long random string, for example the output of `openssl rand -hex 32`. Then start the dev server:
 
 ```sh
 bun run dev
 ```
 
-In the Discord Developer Portal, add `http://localhost:4321/api/auth/callback` as a redirect URI.
+The site runs at `http://localhost:4321`. Locally, `.dev.vars` overrides the values in `wrangler.jsonc`.
 
-## Discord setup
-
-1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications).
-2. Copy the Application ID. That value is `DISCORD_CLIENT_ID`.
-3. On the OAuth2 page, copy the Client Secret (`DISCORD_CLIENT_SECRET`). Add a redirect URI for local development (`http://localhost:4321/api/auth/callback`) and one for production (your `SITE_URL` plus `/api/auth/callback`).
-4. On the Bot page, reset the token and copy it (`DISCORD_BOT_TOKEN`). No privileged intents are needed.
-5. Invite the bot with the OAuth2 URL Generator. Use the scopes `bot` and `applications.commands`, and only the Manage Roles permission.
-6. In Server Settings > Roles, drag the bot role above Student and below every admin or moderator role. A bot can only give roles below its own.
-7. Enable Developer Mode in Discord (User Settings > Advanced). Copy the server ID (`DISCORD_GUILD_ID`) and the Student role ID (`DISCORD_ROLE_ID`).
-8. Create an invite link that does not expire. That URL is `DISCORD_INVITE_URL`.
+In development only, you can add `?demo=in`, `?demo=nomember`, or `?demo=error` to the home page URL to see each state without Discord. The middleware ignores this switch in production builds.
 
 ## Deploy to Cloudflare Workers
+
+Log in to Cloudflare, then store the three secrets. Wrangler asks for each value.
 
 ```sh
 bunx wrangler login
@@ -46,18 +71,26 @@ bunx wrangler secret put DISCORD_BOT_TOKEN
 bunx wrangler secret put SESSION_SECRET
 ```
 
-Edit the plain values in `wrangler.jsonc`. Then build and deploy:
+The other values are plain variables. Set them in `wrangler.jsonc` under `vars`:
+
+- `DISCORD_CLIENT_ID`
+- `DISCORD_GUILD_ID`
+- `DISCORD_ROLE_ID`
+- `DISCORD_INVITE_URL`
+- `SITE_URL`
+
+Then build and deploy:
 
 ```sh
 bun run build
 bunx wrangler deploy
 ```
 
-Add the production redirect URI in the Developer Portal: your `SITE_URL` plus `/api/auth/callback` (for example `https://student-hub.example.workers.dev/api/auth/callback`).
+After the first deploy, add your production callback URL to the **OAuth2** redirects in the Developer Portal (see step 4 above).
 
-## Bot
+## The bot
 
-The bot has two commands, `/verify` and `/role-check`. Setup, tests, and a systemd unit are in `bot/README.md`.
+The bot adds two slash commands, `/verify` and `/role-check`. It sends the link to the site and checks the role. Setup, tests, and the systemd unit are in [bot/README.md](bot/README.md).
 
 ## Tests
 
@@ -66,39 +99,34 @@ bun run test
 cd bot && npm test
 ```
 
-## Security
+`bun run test` runs the site tests with Vitest. `npm test` in `bot/` runs the bot tests with the Node test runner.
 
-Keep secrets out of git. Use `.dev.vars` locally, Worker secrets in production, and `bot/.env` for the bot.
+## Security notes
 
-The access token from Discord login is not stored. The site reads the user id, then drops the token. The browser keeps a signed cookie.
-
-The site never adds people to the server. The login scope is `identify` only.
-
-If the bot token leaks, reset it on the Bot page in the Developer Portal.
+- Keep secrets out of git. `.dev.vars`, `.env`, and `bot/.env` are ignored. Use `.dev.vars` locally, Worker secrets in production, and `bot/.env` for the bot.
+- The access token from Discord is not stored. The site reads the user's id and name, then drops the token.
+- The session cookie is signed with HMAC-SHA256 using `SESSION_SECRET`. It is `httpOnly`, `sameSite=lax`, and `secure` in production.
+- The login state is checked against a cookie that lasts 10 minutes.
+- The home page sends `Cache-Control: private, no-store`, because it depends on the cookie.
+- The login scope is `identify` only.
+- If the bot token leaks, press **Reset Token** on the **Bot** page in the Developer Portal, then update the secret.
 
 ## File map
 
-- `astro.config.mjs`: Cloudflare Workers adapter, on-request rendering, and `session: false`.
-- `wrangler.jsonc`: Worker name and the plain env values.
-- `.dev.vars.example`: local env template. Copy it to `.dev.vars`.
+- `astro.config.mjs`: Astro config. Cloudflare adapter, server output, sessions off.
+- `wrangler.jsonc`: Worker config and the plain variables.
+- `.dev.vars.example`: template for local variables.
 - `src/env.d.ts`: types for the Worker env and `Astro.locals`.
-- `src/lib/config.ts`: reads env inside the Worker.
+- `src/middleware.ts`: reads the session cookie and handles the dev-only `?demo=` switch.
+- `src/lib/config.ts`: reads the variables and throws `ConfigError` for missing ones.
 - `src/lib/session.ts`: creates and checks the signed session cookie.
 - `src/lib/discord.ts`: login URL, token exchange, user lookup, and role update.
-- `src/lib/session.test.ts`: session cookie tests.
+- `src/lib/session.test.ts`: session tests.
 - `src/lib/discord.test.ts`: Discord helper tests with a mock `fetch`.
-- `src/middleware.ts`: reads the session cookie, and keeps the dev `?demo=` switch.
-- `src/pages/api/auth/login.ts`: starts Discord login.
-- `src/pages/api/auth/callback.ts`: finishes login and sets the session cookie.
-- `src/pages/api/auth/logout.ts`: clears the session cookie. GET only redirects home.
-- `src/pages/index.astro`: the student hub page. A signed in user is checked for the role on each load.
+- `src/pages/index.astro`: home page. Checks the role on each signed-in visit.
+- `src/pages/api/auth/login.ts`: starts the login and sets the `state` cookie.
+- `src/pages/api/auth/callback.ts`: finishes the login and sets the session cookie.
+- `src/pages/api/auth/logout.ts`: clears the session cookie. `GET` redirects home.
 - `src/components/DiscordIcon.astro`: Discord icon.
 - `src/components/GitHubIcon.astro`: GitHub icon.
-- `bot/package.json`: bot package. npm, discord.js, Node 22.
-- `bot/.env.example`: bot env template. Copy it to `bot/.env`.
-- `bot/src/config.js`: reads bot env and checks `SITE_URL`.
-- `bot/src/commands.js`: `/verify` and `/role-check` reply builders.
-- `bot/src/index.js`: logs in, registers the guild commands, and answers them.
-- `bot/test/config.test.js`: config tests.
-- `bot/test/commands.test.js`: command reply tests.
-- `bot/README.md`: setup, tests, and the systemd unit.
+- `bot/`: the Discord bot. See [bot/README.md](bot/README.md).
