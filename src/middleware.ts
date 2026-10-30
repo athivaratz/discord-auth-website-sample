@@ -1,4 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
+import { getConfig } from "./lib/config";
+import { readSession, SESSION_COOKIE } from "./lib/session";
 
 const demoStates = {
 	in: "granted",
@@ -6,9 +8,19 @@ const demoStates = {
 	error: "error",
 } as const;
 
-export const onRequest = defineMiddleware((context, next) => {
-	// The auth step fills user in later.
+export const onRequest = defineMiddleware(async (context, next) => {
 	context.locals.user = null;
+
+	try {
+		const { sessionSecret } = getConfig();
+		const value = context.cookies.get(SESSION_COOKIE)?.value;
+		context.locals.user = await readSession(value, sessionSecret);
+	} catch (error) {
+		context.locals.user = null;
+		if (error instanceof Error && error.message.startsWith("Missing ")) {
+			console.error(error.message);
+		}
+	}
 
 	const demo = context.url.searchParams.get("demo");
 	const demoState =

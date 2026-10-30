@@ -3,40 +3,37 @@ import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import DiscordIcon from "../components/DiscordIcon.astro";
 import GitHubIcon from "../components/GitHubIcon.astro";
+import { getConfig } from "../lib/config";
+import { ensureRole } from "../lib/discord";
 
 const BRAND = "Student";
 const BRAND_SUFFIX = ".hub";
 const REPO_URL = "https://github.com/athivaratz/discord-auth-boilerplate";
-const INVITE_URL =
-	import.meta.env.PUBLIC_DISCORD_INVITE_URL || "https://discord.gg/your-invite";
 
 type State = "signedOut" | "noMember" | "granted" | "error";
 
+let INVITE_URL = "https://discord.gg/your-invite";
+try {
+	INVITE_URL = getConfig().inviteUrl;
+} catch {
+	// The signed out page still renders when env is missing.
+}
+
 const user = Astro.locals.user;
+const name = user?.username ?? "";
 
 let state: State = "signedOut";
 if (user && Astro.locals.demoState) {
 	state = Astro.locals.demoState;
+} else if (user) {
+	try {
+		state = await ensureRole(getConfig(), user.id);
+	} catch {
+		state = "error";
+	}
 }
 
-const name = user?.username ?? "";
-
-const listCount = state === "signedOut" ? 3 : state === "noMember" ? 2 : 0;
-const showNote = state !== "signedOut";
-const showQuietLogout = state === "noMember";
-
-let step = 1;
-const noteDelay = step * 60;
-if (showNote) step += 1;
-const firstListDelay = step * 60;
-step += listCount;
-const actionsDelay = step * 60;
-step += 1;
-const quietDelay = step * 60;
-if (showQuietLogout) step += 1;
-const footerDelay = step * 60;
-
-const listDelay = (index: number) => firstListDelay + index * 60;
+const footerStep = state === "signedOut" ? 5 : state === "noMember" ? 6 : 3;
 ---
 
 <html lang="en">
@@ -50,40 +47,34 @@ const listDelay = (index: number) => firstListDelay + index * 60;
 	</head>
 	<body>
 		<main>
-			<h1 class="rise">
+			<h1 class="rise" style="--i: 0">
 				<span class="brand">{BRAND}</span><span class="suffix">{BRAND_SUFFIX}</span>
 			</h1>
 			{
-				state === "noMember" && (
-					<p class="note rise" style={`animation-delay: ${noteDelay}ms`}>
-						Signed in as {name}.
-					</p>
-				)
-			}
-			{
-				state === "granted" && (
-					<p class="note rise" style={`animation-delay: ${noteDelay}ms`}>
-						Signed in as {name}. Your <code>{BRAND}</code> role is ready.
-					</p>
-				)
-			}
-			{
-				state === "error" && (
-					<p class="note rise" style={`animation-delay: ${noteDelay}ms`}>
-						Signed in as {name}. We could not check your role right now. Try again in a minute.
+				state !== "signedOut" && (
+					<p class="note rise" style="--i: 1">
+						{state === "noMember" && <>Signed in as {name}.</>}
+						{state === "granted" && (
+							<>
+								Signed in as {name}. Your <code>{BRAND}</code> role is ready.
+							</>
+						)}
+						{state === "error" && (
+							<>Signed in as {name}. We could not check your role right now. Try again in a minute.</>
+						)}
 					</p>
 				)
 			}
 			{
 				state === "signedOut" && (
 					<ol>
-						<li class="rise" style={`animation-delay: ${listDelay(0)}ms`}>
+						<li class="rise" style="--i: 1">
 							Press <code>Login with Discord</code> and approve the request.
 						</li>
-						<li class="rise" style={`animation-delay: ${listDelay(1)}ms`}>
+						<li class="rise" style="--i: 2">
 							Join the server if you are not in it yet, then press <code>Check again</code>.
 						</li>
-						<li class="rise" style={`animation-delay: ${listDelay(2)}ms`}>
+						<li class="rise" style="--i: 3">
 							Your <code>{BRAND}</code> role is added to you automatically.
 						</li>
 					</ol>
@@ -92,10 +83,10 @@ const listDelay = (index: number) => firstListDelay + index * 60;
 			{
 				state === "noMember" && (
 					<ol>
-						<li class="rise" style={`animation-delay: ${listDelay(0)}ms`}>
+						<li class="rise" style="--i: 2">
 							Join the server with the button below.
 						</li>
-						<li class="rise" style={`animation-delay: ${listDelay(1)}ms`}>
+						<li class="rise" style="--i: 3">
 							Come back and press <code>Check again</code>.
 						</li>
 					</ol>
@@ -103,17 +94,12 @@ const listDelay = (index: number) => firstListDelay + index * 60;
 			}
 			{
 				state === "signedOut" && (
-					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
+					<div class="actions rise" style="--i: 4">
 						<a class="btn primary" href="/api/auth/login">
 							<DiscordIcon />
 							Login with Discord
 						</a>
-						<a
-							class="btn secondary"
-							href={INVITE_URL}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
+						<a class="btn secondary" href={INVITE_URL} target="_blank" rel="noopener noreferrer">
 							Join the server
 						</a>
 					</div>
@@ -121,16 +107,9 @@ const listDelay = (index: number) => firstListDelay + index * 60;
 			}
 			{
 				state === "noMember" && (
-					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
-						<form method="post" action="/api/recheck">
-							<button class="btn primary" type="submit">Check again</button>
-						</form>
-						<a
-							class="btn secondary"
-							href={INVITE_URL}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
+					<div class="actions rise" style="--i: 4">
+						<a class="btn primary" href="/">Check again</a>
+						<a class="btn secondary" href={INVITE_URL} target="_blank" rel="noopener noreferrer">
 							<DiscordIcon />
 							Join the server
 						</a>
@@ -139,27 +118,21 @@ const listDelay = (index: number) => firstListDelay + index * 60;
 			}
 			{
 				state === "granted" && (
-					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
+					<div class="actions rise" style="--i: 2">
+						<a class="btn primary" href={INVITE_URL} target="_blank" rel="noopener noreferrer">
+							<DiscordIcon />
+							Open the server
+						</a>
 						<form method="post" action="/api/auth/logout">
 							<button class="btn secondary" type="submit">Logout</button>
 						</form>
-						<a
-							class="btn secondary"
-							href={INVITE_URL}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							Open the server
-						</a>
 					</div>
 				)
 			}
 			{
 				state === "error" && (
-					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
-						<form method="post" action="/api/recheck">
-							<button class="btn primary" type="submit">Check again</button>
-						</form>
+					<div class="actions rise" style="--i: 2">
+						<a class="btn primary" href="/">Check again</a>
 						<form method="post" action="/api/auth/logout">
 							<button class="btn secondary" type="submit">Logout</button>
 						</form>
@@ -167,14 +140,14 @@ const listDelay = (index: number) => firstListDelay + index * 60;
 				)
 			}
 			{
-				showQuietLogout && (
-					<form class="rise" style={`animation-delay: ${quietDelay}ms`} method="post" action="/api/auth/logout">
+				state === "noMember" && (
+					<form class="rise" style="--i: 5" method="post" action="/api/auth/logout">
 						<button class="quiet" type="submit">Logout</button>
 					</form>
 				)
 			}
 		</main>
-		<footer class="rise" style={`animation-delay: ${footerDelay}ms`}>
+		<footer class="rise" style={`--i: ${footerStep}`}>
 			<a href={REPO_URL} target="_blank" rel="noopener noreferrer">
 				<GitHubIcon />
 				Go to repository
@@ -422,6 +395,7 @@ const listDelay = (index: number) => firstListDelay + index * 60;
 
 	.rise {
 		animation: rise 500ms var(--ease) backwards;
+		animation-delay: calc(var(--i, 0) * 60ms);
 	}
 
 	@keyframes rise {
