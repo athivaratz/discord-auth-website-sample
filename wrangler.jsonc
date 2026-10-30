@@ -1,0 +1,12 @@
+{
+	"name": "discord-auth-boilerplate",
+	"compatibility_date": "2026-10-23",
+	// Secrets go through `bunx wrangler secret put NAME`.
+	"vars": {
+		"DISCORD_CLIENT_ID": "your-client-id",
+		"DISCORD_GUILD_ID": "your-guild-id",
+		"DISCORD_ROLE_ID": "your-role-id",
+		"DISCORD_INVITE_URL": "https://discord.gg/your-invite",
+		"SITE_URL": "https://student-hub.example.workers.dev"
+	}
+}
