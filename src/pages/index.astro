@@ -1,6 +1,42 @@
 ---
-const title = "Student Hub";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
+import DiscordIcon from "../components/DiscordIcon.astro";
+import GitHubIcon from "../components/GitHubIcon.astro";
+
+const BRAND = "Student";
+const BRAND_SUFFIX = ".hub";
+const REPO_URL = "https://github.com/athivaratz/discord-auth-boilerplate";
+const INVITE_URL =
+	import.meta.env.PUBLIC_DISCORD_INVITE_URL || "https://discord.gg/your-invite";
+
+type State = "signedOut" | "noMember" | "granted" | "error";
+
 const user = Astro.locals.user;
+
+let state: State = "signedOut";
+if (user && Astro.locals.demoState) {
+	state = Astro.locals.demoState;
+}
+
+const name = user?.username ?? "";
+
+const listCount = state === "signedOut" ? 3 : state === "noMember" ? 2 : 0;
+const showNote = state !== "signedOut";
+const showQuietLogout = state === "noMember";
+
+let step = 1;
+const noteDelay = step * 60;
+if (showNote) step += 1;
+const firstListDelay = step * 60;
+step += listCount;
+const actionsDelay = step * 60;
+step += 1;
+const quietDelay = step * 60;
+if (showQuietLogout) step += 1;
+const footerDelay = step * 60;
+
+const listDelay = (index: number) => firstListDelay + index * 60;
 ---
 
 <html lang="en">
@@ -10,48 +46,155 @@ const user = Astro.locals.user;
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
+		<title>Student Hub</title>
 	</head>
 	<body>
-		<div class="glow" aria-hidden="true"></div>
 		<main>
-			<h1>{title}</h1>
-			<p class="lead">Sign in with Discord to get your student role.</p>
+			<h1 class="rise">
+				<span class="brand">{BRAND}</span><span class="suffix">{BRAND_SUFFIX}</span>
+			</h1>
 			{
-				user && (
-					<p class="signed-in">Signed in as {user.username}</p>
+				state === "noMember" && (
+					<p class="note rise" style={`animation-delay: ${noteDelay}ms`}>
+						Signed in as {name}.
+					</p>
 				)
 			}
 			{
-				user ? (
-					<form class="action" method="post" action="/api/auth/logout">
-						<button class="btn secondary" type="submit">Logout</button>
+				state === "granted" && (
+					<p class="note rise" style={`animation-delay: ${noteDelay}ms`}>
+						Signed in as {name}. Your <code>{BRAND}</code> role is ready.
+					</p>
+				)
+			}
+			{
+				state === "error" && (
+					<p class="note rise" style={`animation-delay: ${noteDelay}ms`}>
+						Signed in as {name}. We could not check your role right now. Try again in a minute.
+					</p>
+				)
+			}
+			{
+				state === "signedOut" && (
+					<ol>
+						<li class="rise" style={`animation-delay: ${listDelay(0)}ms`}>
+							Press <code>Login with Discord</code> and approve the request.
+						</li>
+						<li class="rise" style={`animation-delay: ${listDelay(1)}ms`}>
+							Join the server if you are not in it yet, then press <code>Check again</code>.
+						</li>
+						<li class="rise" style={`animation-delay: ${listDelay(2)}ms`}>
+							Your <code>{BRAND}</code> role is added to you automatically.
+						</li>
+					</ol>
+				)
+			}
+			{
+				state === "noMember" && (
+					<ol>
+						<li class="rise" style={`animation-delay: ${listDelay(0)}ms`}>
+							Join the server with the button below.
+						</li>
+						<li class="rise" style={`animation-delay: ${listDelay(1)}ms`}>
+							Come back and press <code>Check again</code>.
+						</li>
+					</ol>
+				)
+			}
+			{
+				state === "signedOut" && (
+					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
+						<a class="btn primary" href="/api/auth/login">
+							<DiscordIcon />
+							Login with Discord
+						</a>
+						<a
+							class="btn secondary"
+							href={INVITE_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							Join the server
+						</a>
+					</div>
+				)
+			}
+			{
+				state === "noMember" && (
+					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
+						<form method="post" action="/api/recheck">
+							<button class="btn primary" type="submit">Check again</button>
+						</form>
+						<a
+							class="btn secondary"
+							href={INVITE_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<DiscordIcon />
+							Join the server
+						</a>
+					</div>
+				)
+			}
+			{
+				state === "granted" && (
+					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
+						<form method="post" action="/api/auth/logout">
+							<button class="btn secondary" type="submit">Logout</button>
+						</form>
+						<a
+							class="btn secondary"
+							href={INVITE_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							Open the server
+						</a>
+					</div>
+				)
+			}
+			{
+				state === "error" && (
+					<div class="actions rise" style={`animation-delay: ${actionsDelay}ms`}>
+						<form method="post" action="/api/recheck">
+							<button class="btn primary" type="submit">Check again</button>
+						</form>
+						<form method="post" action="/api/auth/logout">
+							<button class="btn secondary" type="submit">Logout</button>
+						</form>
+					</div>
+				)
+			}
+			{
+				showQuietLogout && (
+					<form class="rise" style={`animation-delay: ${quietDelay}ms`} method="post" action="/api/auth/logout">
+						<button class="quiet" type="submit">Logout</button>
 					</form>
-				) : (
-					<a class="action btn primary" href="/api/auth/login">
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path
-								fill="currentColor"
-								d="M20.32 4.37a19.8 19.8 0 0 0-4.89-1.52.07.07 0 0 0-.08.04c-.21.37-.44.86-.61 1.25a18.27 18.27 0 0 0-5.49 0 12.64 12.64 0 0 0-.62-1.25.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.68 4.37a.07.07 0 0 0-.03.03C.53 9.05-.32 13.58.1 18.06a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 5.99 3.03.08.08 0 0 0 .09-.03c.46-.63.87-1.3 1.22-1.99a.08.08 0 0 0-.04-.11 13.1 13.1 0 0 1-1.87-.89.08.08 0 0 1-.01-.13c.12-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01c3.93 1.79 8.18 1.79 12.06 0a.07.07 0 0 1 .08.01c.12.09.24.2.37.29a.08.08 0 0 1-.01.13 12.3 12.3 0 0 1-1.87.89.08.08 0 0 0-.04.11c.35.7.77 1.36 1.23 1.99a.08.08 0 0 0 .08.03 19.84 19.84 0 0 0 6-3.03.08.08 0 0 0 .04-.05c.5-5.18-.84-9.68-3.55-13.66a.06.06 0 0 0-.03-.03zM8.02 15.33c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.33-.96 2.42-2.16 2.42zm7.97 0c-1.18 0-2.16-1.08-2.16-2.42 0-1.33.96-2.42 2.16-2.42 1.21 0 2.18 1.1 2.16 2.42 0 1.33-.95 2.42-2.16 2.42z"
-							/>
-						</svg>
-						Login with Discord
-					</a>
 				)
 			}
 		</main>
+		<footer class="rise" style={`animation-delay: ${footerDelay}ms`}>
+			<a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+				<GitHubIcon />
+				Go to repository
+				<span aria-hidden="true">→</span>
+			</a>
+		</footer>
 	</body>
 </html>
 
 <style>
 	:root {
 		--bg: #ffffff;
-		--text: #0a0a0a;
-		--muted: #737373;
-		--border: #e5e5e5;
-		--glow: #0a0a0a;
-		--sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-		--mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+		--text: #171717;
+		--muted: #666666;
+		--code-bg: rgba(0, 0, 0, 0.05);
+		--line: rgba(0, 0, 0, 0.08);
+		--primary-hover: #383838;
+		--secondary-hover: #f2f2f2;
+		--sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+		--mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
 		--ease: cubic-bezier(0.22, 1, 0.36, 1);
 		color-scheme: light;
 	}
@@ -59,100 +202,104 @@ const user = Astro.locals.user;
 	@media (prefers-color-scheme: dark) {
 		:root {
 			--bg: #0a0a0a;
-			--text: #fafafa;
-			--muted: #a3a3a3;
-			--border: #262626;
-			--glow: #fafafa;
+			--text: #ededed;
+			--muted: #a1a1a1;
+			--code-bg: rgba(255, 255, 255, 0.06);
+			--line: rgba(255, 255, 255, 0.145);
+			--primary-hover: #cccccc;
+			--secondary-hover: #1a1a1a;
 			color-scheme: dark;
 		}
 	}
 
-	html,
-	body {
-		margin: 0;
-		min-height: 100%;
+	html {
+		background: var(--bg);
 	}
 
 	body {
+		box-sizing: border-box;
+		margin: 0;
 		min-height: 100dvh;
 		display: grid;
-		place-items: center;
+		grid-template-rows: 20px 1fr 20px;
+		align-items: center;
+		justify-items: center;
+		row-gap: 64px;
+		padding: 32px 32px 80px;
 		background: var(--bg);
 		color: var(--text);
 		font-family: var(--sans);
 		-webkit-font-smoothing: antialiased;
 	}
 
-	.glow {
-		position: fixed;
-		top: 42%;
-		left: 50%;
-		z-index: 0;
-		width: min(32rem, 90vw);
-		height: min(32rem, 90vw);
-		border-radius: 50%;
-		background: radial-gradient(circle, var(--glow) 0%, transparent 68%);
-		filter: blur(48px);
-		opacity: 0.1;
-		pointer-events: none;
-		translate: -50% -50%;
-		animation: drift 20s var(--ease) infinite;
-	}
-
 	main {
-		position: relative;
-		z-index: 1;
-		box-sizing: border-box;
-		width: min(480px, 100%);
-		padding: 48px 24px;
+		grid-row: 2;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		gap: 32px;
+		width: min(480px, 100%);
 		text-align: center;
 	}
 
-	h1,
-	.lead,
-	.signed-in,
-	.action {
-		animation: enter 500ms var(--ease) backwards;
-	}
-
 	h1 {
+		display: flex;
+		align-items: baseline;
 		margin: 0;
-		font-size: clamp(2.5rem, 10vw, 3rem);
+		font-family: var(--sans);
 		font-weight: 700;
-		letter-spacing: -0.03em;
-		line-height: 1.05;
+		line-height: 1;
+		color: var(--text);
 	}
 
-	.lead {
-		margin: 16px 0 0;
-		max-width: 100%;
-		color: var(--muted);
-		font-size: 0.9375rem;
-		line-height: 1.5;
-		text-wrap: balance;
-		animation-delay: 60ms;
+	.brand {
+		font-size: 40px;
+		letter-spacing: -0.04em;
+		text-transform: uppercase;
 	}
 
-	.signed-in {
-		margin: 28px 0 0;
-		color: var(--muted);
+	.suffix {
+		font-size: 13px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+
+	.note,
+	ol {
+		margin: 0;
 		font-family: var(--mono);
-		font-size: 0.8125rem;
-		line-height: 1.4;
-		animation-delay: 120ms;
+		font-size: 14px;
+		line-height: 24px;
+		letter-spacing: -0.01em;
 	}
 
-	.action {
-		margin-top: 28px;
-		animation-delay: 120ms;
+	ol {
+		padding: 0;
+		list-style: decimal inside;
 	}
 
-	.signed-in + .action {
-		margin-top: 12px;
-		animation-delay: 180ms;
+	li {
+		margin-bottom: 8px;
+	}
+
+	code {
+		font-family: var(--mono);
+		font-weight: 600;
+		padding: 2px 4px;
+		border-radius: 4px;
+		background: var(--code-bg);
+	}
+
+	.actions {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		width: 100%;
+	}
+
+	.actions form {
+		display: contents;
 	}
 
 	.btn {
@@ -161,24 +308,28 @@ const user = Astro.locals.user;
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
-		height: 44px;
-		padding: 0 20px;
+		width: 100%;
+		height: 40px;
+		margin: 0;
+		padding: 0 16px;
 		border: 1px solid transparent;
 		border-radius: 9999px;
 		font-family: var(--sans);
-		font-size: 0.9375rem;
+		font-size: 14px;
 		font-weight: 500;
 		line-height: 1;
+		white-space: nowrap;
 		text-decoration: none;
 		cursor: pointer;
 		transition:
-			transform 180ms var(--ease),
-			background-color 180ms var(--ease);
+			background-color 180ms,
+			border-color 180ms,
+			transform 180ms;
 	}
 
 	.btn svg {
-		width: 18px;
-		height: 18px;
+		width: 20px;
+		height: 20px;
 		flex: none;
 	}
 
@@ -188,18 +339,21 @@ const user = Astro.locals.user;
 	}
 
 	.primary:hover {
-		background: color-mix(in srgb, var(--text) 86%, var(--bg));
-		transform: translateY(-1px);
+		background: var(--primary-hover);
 	}
 
 	.secondary {
 		background: transparent;
 		color: var(--text);
-		border-color: var(--border);
+		border-color: var(--line);
 	}
 
 	.secondary:hover {
-		background: color-mix(in srgb, var(--text) 6%, var(--bg));
+		background: var(--secondary-hover);
+		border-color: transparent;
+	}
+
+	.btn:hover {
 		transform: translateY(-1px);
 	}
 
@@ -207,16 +361,70 @@ const user = Astro.locals.user;
 		transform: scale(0.98);
 	}
 
-	.btn:focus {
+	.quiet {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--muted);
+		font-family: var(--sans);
+		font-size: 14px;
+		line-height: 20px;
+		cursor: pointer;
+	}
+
+	.quiet:hover {
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+
+	footer {
+		grid-row: 3;
+		display: flex;
+		justify-content: center;
+		gap: 24px;
+	}
+
+	footer a {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		color: inherit;
+		font-family: var(--sans);
+		font-size: 14px;
+		line-height: 20px;
+		text-decoration: none;
+	}
+
+	footer a:hover {
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+
+	footer svg {
+		width: 16px;
+		height: 16px;
+		flex: none;
+	}
+
+	.btn:focus,
+	footer a:focus,
+	.quiet:focus {
 		outline: none;
 	}
 
-	.btn:focus-visible {
+	.btn:focus-visible,
+	footer a:focus-visible,
+	.quiet:focus-visible {
 		outline: 2px solid var(--text);
 		outline-offset: 2px;
 	}
 
-	@keyframes enter {
+	.rise {
+		animation: rise 500ms var(--ease) backwards;
+	}
+
+	@keyframes rise {
 		from {
 			opacity: 0;
 			transform: translateY(8px);
@@ -227,13 +435,32 @@ const user = Astro.locals.user;
 		}
 	}
 
-	@keyframes drift {
-		0%,
-		100% {
-			transform: translate3d(-28px, -18px, 0);
+	@media (min-width: 640px) {
+		body {
+			padding: 80px;
 		}
-		50% {
-			transform: translate3d(36px, 22px, 0);
+
+		main {
+			align-items: flex-start;
+			text-align: left;
+		}
+
+		.actions {
+			flex-direction: row;
+			width: auto;
+		}
+
+		.btn {
+			width: auto;
+			height: 48px;
+			padding: 0 20px;
+			font-size: 16px;
+		}
+	}
+
+	@media (min-width: 768px) {
+		.secondary {
+			min-width: 158px;
 		}
 	}
 

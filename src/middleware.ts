@@ -1,11 +1,22 @@
 import { defineMiddleware } from "astro:middleware";
 
+const demoStates = {
+	in: "granted",
+	nomember: "noMember",
+	error: "error",
+} as const;
+
 export const onRequest = defineMiddleware((context, next) => {
-	// Auth will fill this in.
+	// The auth step fills user in later.
 	context.locals.user = null;
 
-	if (import.meta.env.DEV && context.url.searchParams.get("demo") === "in") {
-		context.locals.user = { username: "athvrt" };
+	const demo = context.url.searchParams.get("demo");
+	const demoState =
+		demo === "in" || demo === "nomember" || demo === "error" ? demoStates[demo] : undefined;
+
+	if (import.meta.env.DEV && demoState) {
+		context.locals.user = { id: "0", username: "athvrt" };
+		context.locals.demoState = demoState;
 	}
 
 	return next();

@@ -2,6 +2,7 @@
 
 declare namespace App {
 	interface Locals {
-		user: { username: string } | null;
+		user: { id: string; username: string } | null;
+		demoState?: "noMember" | "granted" | "error";
 	}
 }
