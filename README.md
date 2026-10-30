@@ -1,6 +1,8 @@
 # Discord auth boilerplate
 
-This example signs a student in with Discord and adds a role on one server. It runs on Cloudflare Workers.
+ตัวอย่างนี้ให้คนเข้าสู่ระบบด้วย Discord แล้วได้ยศ Student บนเซิร์ฟเวอร์เดียว. เว็บรันบน Cloudflare Workers. บอทในโฟลเดอร์ bot/ ส่งลิงก์เว็บและให้เช็กว่ายศมาหรือยัง. เว็บเป็นคนเพิ่มยศหลังล็อกอิน. บอทรันบน VPS ของเจ้าของเซิร์ฟเวอร์ด้วย systemd.
+
+This example signs a student in with Discord and adds a role on one server. It runs on Cloudflare Workers. A small bot in `bot/` points people to the site and lets them check the role.
 
 ## How it works
 
@@ -24,6 +26,17 @@ bun run dev
 
 In the Discord Developer Portal, add `http://localhost:4321/api/auth/callback` as a redirect URI.
 
+## Discord setup
+
+1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications).
+2. Copy the Application ID. That value is `DISCORD_CLIENT_ID`.
+3. On the OAuth2 page, copy the Client Secret (`DISCORD_CLIENT_SECRET`). Add a redirect URI for local development (`http://localhost:4321/api/auth/callback`) and one for production (your `SITE_URL` plus `/api/auth/callback`).
+4. On the Bot page, reset the token and copy it (`DISCORD_BOT_TOKEN`). No privileged intents are needed.
+5. Invite the bot with the OAuth2 URL Generator. Use the scopes `bot` and `applications.commands`, and only the Manage Roles permission.
+6. In Server Settings > Roles, drag the bot role above Student and below every admin or moderator role. A bot can only give roles below its own.
+7. Enable Developer Mode in Discord (User Settings > Advanced). Copy the server ID (`DISCORD_GUILD_ID`) and the Student role ID (`DISCORD_ROLE_ID`).
+8. Create an invite link that does not expire. That URL is `DISCORD_INVITE_URL`.
+
 ## Deploy to Cloudflare Workers
 
 ```sh
@@ -42,11 +55,26 @@ bunx wrangler deploy
 
 Add the production redirect URI in the Developer Portal: your `SITE_URL` plus `/api/auth/callback` (for example `https://student-hub.example.workers.dev/api/auth/callback`).
 
+## Bot
+
+`/verify` and `/role-check` are described in `bot/README.md`.
+Setup, tests, and the systemd unit are in `bot/README.md`.
+
 ## Tests
 
 ```sh
 bun run test
 ```
+
+## Security
+
+Keep secrets out of git. Use `.dev.vars` locally, Worker secrets in production, and `bot/.env` for the bot.
+
+The access token from Discord login is not stored. The site reads the user id, then drops the token. The browser keeps a signed cookie.
+
+The site never adds people to the server. The login scope is `identify` only.
+
+If the bot token leaks, reset it on the Bot page in the Developer Portal.
 
 ## File map
 
@@ -66,3 +94,11 @@ bun run test
 - `src/pages/index.astro`: the student hub page. A signed in user is checked for the role on each load.
 - `src/components/DiscordIcon.astro`: Discord icon.
 - `src/components/GitHubIcon.astro`: GitHub icon.
+- `bot/package.json`: bot package. npm, discord.js, Node 22.
+- `bot/.env.example`: bot env template. Copy it to `bot/.env`.
+- `bot/src/config.js`: reads bot env and checks `SITE_URL`.
+- `bot/src/commands.js`: `/verify` and `/role-check` reply builders.
+- `bot/src/index.js`: logs in, registers the guild commands, and answers them.
+- `bot/test/config.test.js`: config tests.
+- `bot/test/commands.test.js`: command reply tests.
+- `bot/README.md`: setup, tests, and the systemd unit.

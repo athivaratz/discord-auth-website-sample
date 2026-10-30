@@ -8,6 +8,10 @@ astro dev --background
 
 Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
 
+## Tests
+
+From the repo root, `bun run test` runs the site tests. In `bot/`, `npm test` runs the bot tests.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build
