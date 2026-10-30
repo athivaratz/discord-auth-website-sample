@@ -60,7 +60,7 @@ After=network-online.target
 
 [Service]
 User=<user>
-WorkingDirectory=/home/<user>/discord-auth-boilerplate/bot
+WorkingDirectory=/home/<user>/discord-auth-website-sample/bot
 ExecStart=/usr/bin/node --env-file=.env src/index.js
 Restart=on-failure
 

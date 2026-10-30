@@ -18,7 +18,7 @@ const config: DiscordConfig = {
 };
 
 const redirectUri = "http://localhost:4321/api/auth/callback";
-const userAgent = "DiscordBot (https://github.com/athivaratz/discord-auth-boilerplate, 1.0.0)";
+const userAgent = "DiscordBot (https://github.com/athivaratz/discord-auth-website-sample, 1.0.0)";
 
 afterEach(() => {
 	vi.restoreAllMocks();

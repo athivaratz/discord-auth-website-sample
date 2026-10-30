@@ -1,7 +1,7 @@
 import type { SessionUser } from "./session";
 
 const API = "https://discord.com/api/v10";
-const USER_AGENT = "DiscordBot (https://github.com/athivaratz/discord-auth-boilerplate, 1.0.0)";
+const USER_AGENT = "DiscordBot (https://github.com/athivaratz/discord-auth-website-sample, 1.0.0)";
 
 export type DiscordConfig = {
 	clientId: string;

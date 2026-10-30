@@ -1,5 +1,5 @@
 {
-	"name": "discord-auth-boilerplate",
+	"name": "discord-auth-website-sample",
 	"compatibility_date": "2026-10-23",
 	// Secrets go through `bunx wrangler secret put NAME`.
 	"vars": {

@@ -1,5 +1,5 @@
 {
-	"name": "discord-auth-boilerplate-bot",
+	"name": "discord-auth-website-sample-bot",
 	"private": true,
 	"type": "module",
 	"engines": {
