@@ -1,5 +1,5 @@
 import type { APIContext, APIRoute } from "astro";
-import { getConfig } from "../../../lib/config";
+import { ConfigError, getConfig } from "../../../lib/config";
 import { DiscordError, exchangeCode, fetchUser } from "../../../lib/discord";
 import { createSession, SESSION_COOKIE, SESSION_MAX_AGE } from "../../../lib/session";
 
@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 	} catch (error) {
 		if (error instanceof DiscordError) {
 			console.error(`Discord request failed (${error.status})`);
-		} else if (error instanceof Error && error.message.startsWith("Missing ")) {
+		} else if (error instanceof ConfigError) {
 			console.error(error.message);
 		} else {
 			console.error("Login failed");

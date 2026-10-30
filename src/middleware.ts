@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro:middleware";
-import { getConfig } from "./lib/config";
+import { ConfigError, getConfig } from "./lib/config";
 import { readSession, SESSION_COOKIE } from "./lib/session";
 
 const demoStates = {
@@ -17,9 +17,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		context.locals.user = await readSession(value, sessionSecret);
 	} catch (error) {
 		context.locals.user = null;
-		if (error instanceof Error && error.message.startsWith("Missing ")) {
-			console.error(error.message);
-		}
+		if (error instanceof ConfigError) console.error(error.message);
 	}
 
 	const demo = context.url.searchParams.get("demo");

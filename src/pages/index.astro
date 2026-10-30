@@ -22,6 +22,9 @@ try {
 const user = Astro.locals.user;
 const name = user?.username ?? "";
 
+// The page depends on the cookie, so no shared cache may keep it.
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
 let state: State = "signedOut";
 if (user && Astro.locals.demoState) {
 	state = Astro.locals.demoState;

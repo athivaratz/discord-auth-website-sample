@@ -6,8 +6,8 @@
       "name": "astronautical-accretion",
       "dependencies": {
         "@astrojs/cloudflare": "^14.4.3",
-        "@fontsource-variable/geist": "5.3.0",
-        "@fontsource-variable/geist-mono": "5.3.0",
+        "@fontsource-variable/geist": "^5.3.0",
+        "@fontsource-variable/geist-mono": "^5.3.0",
         "astro": "^7.4.4",
       },
       "devDependencies": {

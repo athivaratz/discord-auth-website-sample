@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { getConfig } from "../../../lib/config";
+import { ConfigError, getConfig } from "../../../lib/config";
 import { loginUrl } from "../../../lib/discord";
 
 export const GET: APIRoute = ({ cookies, redirect }) => {
@@ -19,9 +19,7 @@ export const GET: APIRoute = ({ cookies, redirect }) => {
 
 		return redirect(loginUrl(config, state), 302);
 	} catch (error) {
-		if (error instanceof Error && error.message.startsWith("Missing ")) {
-			console.error(error.message);
-		}
+		if (error instanceof ConfigError) console.error(error.message);
 		return new Response("Login failed. Go back and try again.", { status: 502 });
 	}
 };

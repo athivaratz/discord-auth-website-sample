@@ -6,6 +6,9 @@ export type AppConfig = DiscordConfig & {
 	inviteUrl: string;
 };
 
+// Thrown when an env value is missing. Only the variable name goes into the message.
+export class ConfigError extends Error {}
+
 export function getConfig(): AppConfig {
 	const values = {
 		DISCORD_CLIENT_ID: env.DISCORD_CLIENT_ID,
@@ -19,7 +22,7 @@ export function getConfig(): AppConfig {
 	};
 
 	for (const [name, value] of Object.entries(values)) {
-		if (!value) throw new Error(`Missing ${name}`);
+		if (!value) throw new ConfigError(`Missing ${name}`);
 	}
 
 	return {
